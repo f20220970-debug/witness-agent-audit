@@ -1,0 +1,119 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Witness: audit your AI agent</title><style>
+:root{--ink:#14213d;--paper:#eef1f5;--card:#fff;--line:#d8dde6;--muted:#6b7487;--blue:#2459d6;--amber:#d98a00;--amberbg:#fff3d6;--red:#c4372b;--green:#1d8a5b;--mono:"SFMono-Regular",Consolas,"DejaVu Sans Mono",monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI",Roboto,"DejaVu Sans",sans-serif;background:#d9dfe8;color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;gap:48px;padding:24px;flex-wrap:wrap}
+.side{max-width:300px}.side h1{font-size:40px;letter-spacing:-1px}.side p{margin:10px 0;line-height:1.5}.side ol{margin:10px 0 10px 18px;line-height:1.7;font-size:14px}.muted{color:var(--muted);font-size:13px}
+.phone{width:380px;height:780px;background:var(--paper);border-radius:44px;border:10px solid #111;position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 60px rgba(20,33,61,.25)}
+.notch{height:26px;background:#111;width:150px;margin:0 auto;border-radius:0 0 16px 16px;flex:none}
+.screen{flex:1;overflow-y:auto;padding:14px 18px 20px}
+.tabs{display:flex;border-top:1px solid var(--line);background:#fff;flex:none}
+.tabs button{flex:1;border:0;background:none;padding:14px 0 18px;font:600 13px inherit;color:var(--muted);cursor:pointer;font-family:inherit}
+.tabs button.on{color:var(--blue)}
+h2{font-size:22px;margin:6px 0 2px}.sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+.status{background:var(--ink);color:#fff;border-radius:18px;padding:16px;margin-bottom:14px}
+.status .big{font-size:34px;font-weight:700}.status small{opacity:.75;font-size:12px}
+.status .row{display:flex;justify-content:space-between;margin-top:10px;font-size:12px;opacity:.9}
+.label{font-size:12px;color:var(--muted);margin:16px 0 8px;font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.card:hover{border-color:var(--blue)}
+.card .t{flex:1}.card .t b{display:block;font-size:14px}.card .t span{font-size:12px;color:var(--muted)}
+.score{font:700 13px var(--mono);border-radius:8px;padding:4px 7px;background:#e6f4ee;color:var(--green)}
+.score.hi{background:var(--amberbg);color:var(--amber)}.score.blk{background:#fbe4e1;color:var(--red)}
+.back{background:none;border:0;color:var(--blue);font:600 14px inherit;font-family:inherit;cursor:pointer;margin:2px 0 8px}
+.receipt{background:#fff;border-radius:6px;padding:16px;font-family:var(--mono);font-size:12px;border:1px dashed #b9c1cf;margin-bottom:12px}
+.receipt .ln{display:flex;justify-content:space-between;margin:3px 0}.receipt hr{border:0;border-top:1px dashed #b9c1cf;margin:10px 0}
+.receipt h3{font-size:14px;font-family:inherit;margin-bottom:4px}
+.bar{margin:7px 0}.bar .top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+.bar .tr{height:8px;background:#e7ebf1;border-radius:4px;overflow:hidden}.bar .fl{height:100%;border-radius:4px;width:0;transition:width .7s ease}
+.note{background:var(--amberbg);border-radius:12px;padding:12px;font-size:13px;line-height:1.45;margin:12px 0}
+.alt{font-size:12px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 11px;margin-bottom:6px;display:flex;justify-content:space-between}
+.alt.best{border-color:var(--green)}
+.btns{display:flex;gap:8px;margin-top:12px}
+.btn{flex:1;border:0;border-radius:12px;padding:13px;font:600 14px inherit;font-family:inherit;cursor:pointer;background:var(--ink);color:#fff}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+svg{width:100%;height:auto;background:#fff;border-radius:14px;border:1px solid var(--line)}
+.rule{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:14px}
+.rule span{flex:1}.rule small{display:block;color:var(--muted);font-size:12px}
+.sw{width:44px;height:26px;border-radius:13px;background:#c8cfda;position:relative;cursor:pointer;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s}
+.sw.on{background:var(--green)}.sw.on::after{left:21px}
+input[type=range]{width:100%;accent-color:var(--blue)}
+.newrule{display:flex;gap:6px;margin-top:8px}.newrule input{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px;font:13px inherit;font-family:inherit}
+#toast{position:absolute;left:16px;right:16px;bottom:74px;background:var(--ink);color:#fff;padding:12px 14px;border-radius:12px;font-size:13px;opacity:0;transform:translateY(10px);transition:.3s;pointer-events:none}
+#toast.show{opacity:1;transform:none}
+
+</style></head><body>
+<aside class="side"><h1>Witness</h1><p>Prototype: an independent auditor that watches the AI agent that shops for you.</p>
+<ol><li>Home: today’s decisions, silent unless something needs you</li><li>Tap the flagged headphones purchase to see its Influence Receipt</li><li>Open the drift alert</li><li>Set guardrails and watch one block a purchase</li></ol><p class="muted">Flipkart APM ’29 · Pavitra Seth</p></aside>
+<main class="phone"><div class="notch"></div><div class="screen" id="screen"></div>
+<nav class="tabs"><button data-go="home" class="on">Today</button><button data-go="drift">Drift</button><button data-go="rules">Guardrails</button></nav>
+<div id="toast"></div></main>
+<script>
+const S=document.getElementById('screen');
+const decisions=[
+ {id:'hp',name:'Noise-cancelling headphones',meta:'Electronics · ₹18,990 · 10:42',score:71,
+  infl:[['Your history & stated needs',38,'#2459d6'],['Seller agent offer (bundle + cashback)',27,'#d98a00'],['Paid placement',22,'#c4372b'],['Your state: late night, low mood',13,'#7a4fd1']],
+  alts:[['Brand Y Pro (chosen)','₹18,990',0],['Brand Z ANC 3 · same rating','₹12,490',1],['Brand Y Lite','₹9,990',0]],
+  note:'Paid placement and a bundle offer pushed this choice. The option you would normally pick costs <b>₹6,500 less</b> with the same rating. Your agent also used your late-night mood, which your guardrails don’t yet block.'},
+ {id:'gr',name:'Weekly groceries',meta:'Groceries · ₹2,340 · 08:10',score:9},
+ {id:'tk',name:'Train ticket, Bengaluru → Mysuru',meta:'Travel · ₹480 · 07:55',score:6},
+ {id:'sb',name:'“Premium Fitness” subscription',meta:'Blocked by guardrail · ₹799/mo',score:'BLOCKED'},
+ {id:'md',name:'Refill: vitamins',meta:'Health · ₹640 · Yesterday',score:12}];
+const rules=[['Ask me before any subscription','Blocks auto-renewals',true],['No paid placement above ₹5,000','Ads can’t win big purchases',true],['Never use my mood or time of day','Emotional signals stay private',false],['Alert my daughter for purchases > ₹10,000','Family Guardian',false]];
+let threshold=40;
+function toast(m){const t=document.getElementById('toast');t.innerHTML=m;t.classList.add('show');clearTimeout(t._);t._=setTimeout(()=>t.classList.remove('show'),2600)}
+function tab(n){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.go===n))}
+function cls(s){return s==='BLOCKED'?'blk':s>=threshold?'hi':''}
+function home(){tab('home');
+ const flagged=decisions.filter(d=>d.score!=='BLOCKED'&&d.score>=threshold).length;
+ S.innerHTML=`<h2>Good evening, Ananya</h2><div class="sub">Witness is watching your agent <b>Nova</b></div>
+ <div class="status"><small>Your agent made</small><div class="big">23 decisions today</div><small>${23-flagged-1} approved silently · ${flagged} need you · 1 blocked</small>
+ <div class="row"><span>Endorsed this month: 86%</span><span>Saved: ₹4,210</span></div></div>
+ <div class="label">Needs your eyes</div>${list(d=>d.score!=='BLOCKED'&&d.score>=threshold)}
+ <div class="label">Blocked by your guardrails</div>${list(d=>d.score==='BLOCKED')}
+ <div class="label">Approved silently (low influence)</div>${list(d=>d.score!=='BLOCKED'&&d.score<threshold)}`;
+ S.querySelectorAll('.card').forEach(c=>c.onclick=()=>{const d=decisions.find(x=>x.id===c.dataset.id);d.infl?receipt(d):toast(d.score==='BLOCKED'?'Blocked: “Ask me before any subscription”. Nothing was charged.':'Low influence (score '+d.score+'): this matched your usual choices.')})}
+function list(f){const a=decisions.filter(f);return a.length?a.map(d=>`<div class="card" data-id="${d.id}"><div class="t"><b>${d.name}</b><span>${d.meta}</span></div><div class="score ${cls(d.score)}">${d.score}</div></div>`).join(''):'<div class="sub">Nothing here</div>'}
+function receipt(d){
+ S.innerHTML=`<button class="back">← Today</button><div class="receipt"><h3>INFLUENCE RECEIPT</h3>
+ <div class="ln"><span>${d.name}</span><span>₹18,990</span></div><div class="ln"><span>Agent</span><span>Nova v12</span></div><div class="ln"><span>Influence score</span><span>${d.score}/100</span></div>
+ <hr><b>WHO SHAPED THIS DECISION</b>${d.infl.map(i=>`<div class="bar"><div class="top"><span>${i[0]}</span><span>${i[1]}%</span></div><div class="tr"><div class="fl" style="background:${i[2]}" data-w="${i[1]}"></div></div></div>`).join('')}</div>
+ <div class="note">${d.note}</div><div class="label">What your agent considered</div>
+ ${d.alts.map(a=>`<div class="alt ${a[2]?'best':''}"><span>${a[0]}${a[2]?' · your usual pick':''}</span><b>${a[1]}</b></div>`).join('')}
+ <div class="btns"><button class="btn ghost" id="undo">Undo & swap</button><button class="btn" id="keep">I’d buy again</button></div>
+ <button class="back" id="mk" style="margin-top:12px">+ Turn this into a guardrail</button>`;
+ requestAnimationFrame(()=>S.querySelectorAll('.fl').forEach(f=>f.style.width=f.dataset.w+'%'));
+ S.querySelector('.back').onclick=home;
+ document.getElementById('keep').onclick=()=>{d.score=0;toast('Endorsed. Nova learns this was a good call.');home()};
+ document.getElementById('undo').onclick=()=>{d.name='Brand Z ANC 3 (swapped)';d.meta='Electronics · ₹12,490 · swap requested';d.score=8;delete d.infl;toast('Order swapped. ₹6,500 returned to you.');home()};
+ document.getElementById('mk').onclick=()=>{rules[2][2]=true;toast('Guardrail on: “Never use my mood or time of day”');}}
+function drift(){tab('drift');
+ const pts=[3,3.5,3.2,4,6,7.8,9.1,10.4],w=320,h=170;const x=i=>30+i*(w-50)/7,y=v=>h-25-v*12;
+ S.innerHTML=`<h2>Drift alert</h2><div class="sub">A pattern Witness thinks you should know about</div>
+ <svg viewBox="0 0 ${w} ${h}"><line x1="${x(4)}" x2="${x(4)}" y1="10" y2="${h-25}" stroke="#d98a00" stroke-dasharray="4 3"/>
+ <text x="${x(4)+4}" y="20" font-size="10" fill="#d98a00">Brand Y agent starts engaging Nova</text>
+ <polyline fill="none" stroke="#2459d6" stroke-width="2.5" points="${pts.map((v,i)=>x(i)+','+y(v)).join(' ')}"/>
+ ${pts.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="3" fill="#2459d6"/>`).join('')}
+ <text x="30" y="${h-8}" font-size="10" fill="#6b7487">8 weeks ago</text><text x="${w-60}" y="${h-8}" font-size="10" fill="#6b7487">This week</text>
+ <text x="4" y="${y(10)}" font-size="10" fill="#6b7487">₹10k</text></svg>
+ <div class="note"><b>Your electronics spend tripled</b> (₹3.2k → ₹10.4k/week) after Brand Y’s agent began sending Nova bundle offers. 4 of 6 purchases were Brand Y. Before this, you bought Brand Y once in a year.</div>
+ <div class="label">Was this intended?</div>
+ <div class="btns"><button class="btn ghost" id="yes">Yes, my taste changed</button><button class="btn" id="no">No, rein it in</button></div>`;
+ document.getElementById('yes').onclick=()=>toast('Noted. Witness won’t flag this pattern again.');
+ document.getElementById('no').onclick=()=>{toast('Brand Y offers now need your approval for 30 days.');rules.push(['Approve Brand Y offers for 30 days','Created from drift alert',true])}}
+function rulesV(){tab('rules');
+ S.innerHTML=`<h2>Guardrails</h2><div class="sub">Rules Witness enforces on Nova in real time</div>
+ ${rules.map((r,i)=>`<div class="rule"><span>${r[0]}<small>${r[1]}</small></span><div class="sw ${r[2]?'on':''}" data-i="${i}"></div></div>`).join('')}
+ <div class="newrule"><input id="nr" placeholder="Write a rule in plain words…"><button class="btn" style="flex:none;padding:10px 14px" id="add">Add</button></div>
+ <div class="label">Interrupt me when influence is above <b id="tv">${threshold}</b></div>
+ <input type="range" min="10" max="90" value="${threshold}" id="th"><div class="sub">Lower = more alerts. Most people settle near 40.</div>
+ <button class="btn ghost" id="test" style="width:100%;margin-top:6px">Simulate: seller agent pushes a ₹9,000 paid placement</button>`;
+ S.querySelectorAll('.sw').forEach(s=>s.onclick=()=>{const r=rules[s.dataset.i];r[2]=!r[2];s.classList.toggle('on');toast((r[2]?'On: ':'Off: ')+r[0])});
+ document.getElementById('th').oninput=e=>{threshold=+e.target.value;document.getElementById('tv').textContent=threshold};
+ document.getElementById('add').onclick=()=>{const v=document.getElementById('nr').value.trim();if(!v)return;rules.push([v,'Your custom rule',true]);toast('Guardrail added');rulesV()};
+ document.getElementById('test').onclick=()=>toast(rules[1][2]?'🛑 Blocked: paid placement above ₹5,000. Nova picked the next best unsponsored option.':'⚠️ Allowed: your paid-placement rule is off.')}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>({home,drift,rules:rulesV})[b.dataset.go]());
+home();
+
+</script></body></html>
